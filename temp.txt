@@ -1,0 +1,12 @@
+3
+[<pruefung.Island object at 0x7f07b4b8ec90>, <pruefung.Island object at 0x7f07b5370910>]
+collided
+1
+Parallel: 0.0003209114074707031
+Sequenziell: 4.3392181396484375e-05
+Members: [(0, 1), (1, 1), (2, 2), (2, 4), (3, 3), (1, 5)]
+
+1
+Members: [(0, 1), (1, 1), (1, 5), (2, 2), (2, 4), (3, 3)]
+
+1
