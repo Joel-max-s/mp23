@@ -6,8 +6,24 @@ import matrix as mx
 import math
 
 comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+my_rank = comm.Get_rank()
 nprocs = comm.Get_size()
+
+matrix: mx.Matrix
+if my_rank == 0:
+    l = generator.generate(1000, 1000)
+    matrix = mx.list_to_matrix(l)
+
+
+gens = math.ceil(math.log2(nprocs))
+for gen in range(gens):
+    if 2**gen <= my_rank and my_rank < 2**(gen-1):
+        recv = comm.recv(source=my_rank-2**gen)
+        
+    if my_rank < 2**gen:
+        m = mx.split_matrix(matrix, 2)
+        matrix = m[0]
+        comm.send(m[1], my_rank+2**gen)
 
 
 
@@ -19,7 +35,7 @@ nprocs = comm.Get_size()
 # matrix = generator.generate_with_isles(1000, 1000, 100)
 
 start = time.time()
-if rank == 0:
+if my_rank == 0:
     l = generator.generate(1000, 1000)
     matrix = mx.list_to_matrix(l)
     m = mx.split_matrix(matrix, 2)
@@ -42,22 +58,22 @@ if rank == 0:
     print(len(seq.islands))
 
 else:
-    if rank in [1,4]:
+    if my_rank in [1,4]:
         data = comm.recv()
         d = mx.split_matrix(data, 2)
-        comm.send(d[0], rank+1, tag=rank)
-        comm.send(d[1], rank+2, tag=rank)
-        m1 = comm.recv(source=rank+1)
-        m2 = comm.recv(source=rank+2)
+        comm.send(d[0], my_rank+1, tag=my_rank)
+        comm.send(d[1], my_rank+2, tag=my_rank)
+        m1 = comm.recv(source=my_rank+1)
+        m2 = comm.recv(source=my_rank+2)
         m1.merge(m2)
         comm.send(m1, 0)
     else:
         d: mx.Matrix = comm.recv()
         r = mx.countIslands(d)
-        if rank in [2,5]:
-            comm.send(r, rank-1)
-        elif rank in [3,6]:
-            comm.send(r, rank-2)
+        if my_rank in [2,5]:
+            comm.send(r, my_rank-1)
+        elif my_rank in [3,6]:
+            comm.send(r, my_rank-2)
 
 # else:
 #     data = comm.recv(source=0)
