@@ -51,7 +51,7 @@ if my_rank == 0:
         print(f'Parallel: {end-start}')
 
     start = time.time()
-    seq = mx.countIslands(matrix)
+    seq = mx.count_islands(matrix)
     end = time.time()
     print(f'Sequenziell: {end-start}')
     print(len(calced.islands))
@@ -69,7 +69,7 @@ else:
         comm.send(m1, 0)
     else:
         d: mx.Matrix = comm.recv()
-        r = mx.countIslands(d)
+        r = mx.count_islands(d)
         if my_rank in [2,5]:
             comm.send(r, my_rank-1)
         elif my_rank in [3,6]:

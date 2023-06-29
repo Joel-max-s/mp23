@@ -21,12 +21,16 @@ class Matrix:
 
 class Island:
     elems: set[tuple[int, int]]
+    min_row: int
+    is_min_island: bool
 
     def __str__(self) -> str:
         return str(self.elems)
 
-    def __init__(self, e: set[tuple[int, int]]) -> None:
+    def __init__(self, e: set[tuple[int, int]], min_r) -> None:
         self.elems = e
+        self.min_row = min_r
+        self.is_min_island = any(a[0] == self.min_row for a in self.elems)
 
     def merge(self, other: 'Island'):
         self.elems.update(other.elems)
@@ -37,22 +41,39 @@ class Island:
         return False
     
 class Row:
+    min_row: int
     islands: set[Island]
+    min_islands: set[Island]
 
     def __str__(self) -> str:
-        s = ""
+        s = "islands:\n"
         for i in self.islands:
-            s += f"{i}\n"
+            s += f"\t{i}\n"
+        s += "min_islands:\n"
+        for i in self.min_islands:
+            s += f"\t{i}\n"
+        s += f"min_row: {self.min_row}"
         return s
 
-    def __init__(self, i: set[Island]) -> None:
+    def __init__(self, i: set[Island], min_r: int) -> None:
         self.islands = i
+        self.min_row = min_r
+        self.compute_min_islands()
+
+    def compute_min_islands(self):
+        self.min_islands = set(filter(lambda a: any(b[0] == self.min_row for b in a.elems), self.islands))
+        
 
     def merge(self, other: 'Row'):
+        merge_row = other.min_row
+
+        own_merge_contestants = set(filter(lambda a: any(b[0] == merge_row for b in a.elems), self.islands))
+        self.islands.difference_update(own_merge_contestants)
+
         to_delete: set[Island] = set()
 
-        for o in other.islands:
-            for s in self.islands:
+        for o in other.min_islands:
+            for s in own_merge_contestants:
                 if s.collide(o):
                     s.merge(o)
                     to_delete.add(o)
@@ -61,8 +82,8 @@ class Row:
 
         to_delete: set[Island] = set()
 
-        for s1 in self.islands:
-            for s2 in self.islands:
+        for s1 in own_merge_contestants:
+            for s2 in own_merge_contestants:
                 if s1 == s2:
                     continue
                 if s1 in to_delete:
@@ -71,11 +92,12 @@ class Row:
                     s1.merge(s2)
                     to_delete.add(s2)
 
-        self.islands.difference_update(to_delete)
+        own_merge_contestants.difference_update(to_delete)
         
-        self.islands.update(other.islands)
+        self.islands.update(other.islands, own_merge_contestants)
+        self.compute_min_islands()
 
-def countIslands(matrix: Matrix) -> Row:
+def count_islands(matrix: Matrix) -> Row:
     rows = len(matrix.elems)
     cols = len(matrix.elems[0])
 
@@ -99,9 +121,9 @@ def countIslands(matrix: Matrix) -> Row:
             
     islands: list[Island] = []
     for i, e in enumerate(arr):
-        islands.append(Island(set(e)))
+        islands.append(Island(set(e), matrix.start_row))
 
-    return Row(set(islands))
+    return Row(set(islands), matrix.start_row)
 
 def idephtSearch(matrix: list[list[bool]], visited: list[list[int]], i: int, j: int, count: int):
     rowNeighours = [-1, -1, -1, 0, 0, 1, 1, 1]
@@ -149,5 +171,5 @@ def list_to_matrix(l: list[list[bool]]) -> Matrix:
 
 if __name__ == "__main__":
     m = list_to_matrix(example_list)
-    row = countIslands(m)
+    row = count_islands(m)
     print(len(row.islands))
