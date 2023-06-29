@@ -40,6 +40,9 @@ class Island:
             return True
         return False
     
+    def print_info(self):
+        print(f"size: {len(self.elems): <10} one Member: {next(iter(self.elems))}")
+    
 class Row:
     min_row: int
     islands: set[Island]
@@ -96,6 +99,12 @@ class Row:
         
         self.islands.update(other.islands, own_merge_contestants)
         self.compute_min_islands()
+
+    def print_info(self) -> None:
+        print(f'There are {len(self.islands)} different Islands')
+        print('Here is are the Stats of the Islands:')
+        for i in self.islands:
+            i.print_info()
 
 def count_islands(matrix: Matrix) -> Row:
     rows = len(matrix.elems)
