@@ -181,4 +181,4 @@ def list_to_matrix(l: list[list[bool]]) -> Matrix:
 if __name__ == "__main__":
     m = list_to_matrix(example_list)
     row = count_islands(m)
-    print(len(row.islands))
+    row.print_info()
