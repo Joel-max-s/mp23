@@ -2,7 +2,6 @@ from mpi4py import MPI
 import math
 import matrix as mx
 import generator
-import time
 import argparse
 
 comm = MPI.COMM_WORLD
