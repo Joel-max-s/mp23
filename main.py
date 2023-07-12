@@ -4,6 +4,7 @@ import matrix as mx
 import generator
 import argparse
 
+save_file = False
 comm = MPI.COMM_WORLD
 my_rank = comm.Get_rank()
 nprocs = comm.Get_size()
@@ -11,12 +12,22 @@ nprocs = comm.Get_size()
 ROWS = 10
 COLUMNS = 10
 
-def run():
+def run() -> mx.Row:
+    # TODO
+    """calculate the number of islands
+
+    Returns:
+        mx.Row: the final "ROW", there are all rows in it
+    """
+
+    # generate a random matrix of the given size
     matrix: mx.Matrix
     if my_rank == 0:
         l = generator.generate(ROWS, COLUMNS)
         matrix = mx.list_to_matrix(l)
 
+    # split the matrix and send them to their receivers
+    # this is done in a binary-tree
     gens = math.ceil(math.log2(nprocs))
     for gen in range(gens):
         if 2**gen <= my_rank and my_rank < 2**(gen+1):
@@ -32,6 +43,9 @@ def run():
 
     r = mx.count_islands(matrix)
 
+    # send the calculated results to their receivers
+    # merge the results
+    # this is also done in a binary tree
     for gen in range(gens-1,-1,-1):
         if 2**gen <= my_rank and my_rank < 2**(gen+1):
             send_to = my_rank-2**gen
@@ -47,16 +61,15 @@ def run():
     
 
 if my_rank == 0:
-    parser = argparse.ArgumentParser(prog="Pruefungsprojekt mp23", exit_on_error=False)
+    parser = argparse.ArgumentParser(prog="Pruefungsprojekt mp23", exit_on_error=False, add_help=False)
     parser.add_argument('rows', type=int)
     parser.add_argument('columns', type=int)
-    parser.add_argument('-b', '--benchmark', type=int)
     try:
         args = parser.parse_args()
         ROWS = int(args.rows)
         COLUMNS = int(args.columns)
 
-    except argparse.ArgumentError:
+    except:
         print('You need to specify the number of rows and columns')
         print('Example: mpirun --use-hwthread-cpus -np 8 python3 main.py 100 100')
         comm.Abort(1)

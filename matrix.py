@@ -12,14 +12,24 @@ example_list : list[list[bool]] = [
 ]
 
 class Matrix:
+    """The input.
+    """
     start_row: int
     elems: list[list[bool]]
 
     def __init__(self, e: list[list[bool]], s: int) -> None:
+        """Initialize the Matrix
+
+        Args:
+            e (list[list[bool]]): The matrix as 2d list of bools
+            s (int): The global start row, if the matrix was already splitted, else it should be 0
+        """
         self.elems = e
         self.start_row = s
 
 class Island:
+    """An island is a set off points in the matrix that are neighbours.
+    """
     elems: set[tuple[int, int]]
     min_row: int
     is_min_island: bool
@@ -27,15 +37,34 @@ class Island:
     def __str__(self) -> str:
         return str(self.elems)
 
-    def __init__(self, e: set[tuple[int, int]], min_r) -> None:
+    def __init__(self, e: set[tuple[int, int]], min_r: int) -> None:
+        """Initialize the Island
+
+        Args:
+            e (set[tuple[int, int]]): the elements of the island
+            min_r (_type_): the smallest row in the global Matrix that is present in this Island
+        """
         self.elems = e
         self.min_row = min_r
         self.is_min_island = any(a[0] == self.min_row for a in self.elems)
 
     def merge(self, other: 'Island'):
+        """Add the elems of an other Island to the own island
+
+        Args:
+            other (Island): the other Island
+        """
         self.elems.update(other.elems)
 
     def collide(self, other: 'Island') -> bool:
+        """Checks if the island collides with the other Island
+
+        Args:
+            other (Island): the other Island
+
+        Returns:
+            bool: If True the Island collide, else not
+        """
         if self.elems.intersection(other.elems):
             return True
         return False
@@ -44,6 +73,8 @@ class Island:
         print(f"size: {len(self.elems): <10} one Member: {next(iter(self.elems))}")
     
 class Row:
+    """Contains rows from the global Matrix
+    """
     min_row: int
     islands: set[Island]
     min_islands: set[Island]
@@ -59,22 +90,40 @@ class Row:
         return s
 
     def __init__(self, i: set[Island], min_r: int) -> None:
+        """Initialize the Row
+
+        Args:
+            i (set[Island]): the islands that are present in the row
+            min_r (int): the smallest row in the global Matrix that is present in this Row
+        """
         self.islands = i
         self.min_row = min_r
         self.compute_min_islands()
 
     def compute_min_islands(self):
+        """compute all min Islands
+
+        Min islands are Islands that have an elemt in the min row.
+        If an island is an min_island it could be merged with an other island from an other row.
+        """
         self.min_islands = set(filter(lambda a: any(b[0] == self.min_row for b in a.elems), self.islands))
         
 
     def merge(self, other: 'Row'):
+        """Add the elements of an other row to this row.
+
+        Args:
+            other (Row): the other Row
+        """
         merge_row = other.min_row
 
+        # the own islands that are contestants for merging
         own_merge_contestants = set(filter(lambda a: any(b[0] == merge_row for b in a.elems), self.islands))
         self.islands.difference_update(own_merge_contestants)
 
         to_delete: set[Island] = set()
 
+        # merge colliding islands
         for o in other.min_islands:
             for s in own_merge_contestants:
                 if s.collide(o):
@@ -85,6 +134,8 @@ class Row:
 
         to_delete: set[Island] = set()
 
+        # check if through merging with the other row, the changed merged rows now collide
+        # if yes merge them
         for s1 in own_merge_contestants:
             for s2 in own_merge_contestants:
                 if s1 == s2:
@@ -107,6 +158,16 @@ class Row:
             i.print_info()
 
 def count_islands(matrix: Matrix) -> Row:
+    """Count how many Islands there are in the given Matrix
+
+    Get the islands through a depht-first-search
+
+    Args:
+        matrix (Matrix): the matrix
+
+    Returns:
+        Row: contains all islands and some extra info
+    """
     rows = len(matrix.elems)
     cols = len(matrix.elems[0])
 
@@ -135,6 +196,17 @@ def count_islands(matrix: Matrix) -> Row:
     return Row(set(islands), matrix.start_row)
 
 def idephtSearch(matrix: list[list[bool]], visited: list[list[int]], i: int, j: int, count: int):
+    """An iterative depht-first-search algorithm
+
+    Seach all neighbours if there is also an island-part.
+
+    Args:
+        matrix (list[list[bool]]): 2d list of marked island-parts
+        visited (list[list[int]]): already visited island-parts
+        i (int): start Row
+        j (int): start Column
+        count (int): this is the 'count' Island
+    """
     rowNeighours = [-1, -1, -1, 0, 0, 1, 1, 1]
     colNeighours = [-1, 0, 1, -1, 1, -1, 0, 1]
 
@@ -158,11 +230,31 @@ def idephtSearch(matrix: list[list[bool]], visited: list[list[int]], i: int, j: 
 
 
 def is_safe(matrix: list[list[bool]], visited: list[list[int]], i: int, j: int) -> bool:
+    """Check if square is safe to visit
+
+    Args:
+        matrix (list[list[bool]]): 2d list of marked island-parts
+        visited (list[list[int]]): already visited island-parts
+        i (int): Row
+        j (int): Column
+
+    Returns:
+        bool: True if it is safe to visit
+    """
     rows = len(matrix)
     cols = len(matrix[0])
     return (i >= 0 and i < rows and j >= 0 and j < cols and visited[i][j] == 0 and matrix[i][j])
 
-def split_matrix(matrix: Matrix, splits: int):
+def split_matrix(matrix: Matrix, splits: int) -> list[Matrix]:
+    """Split a big matrix into smaller matrices
+
+    Args:
+        matrix (Matrix): the big matrix to split
+        splits (int): split into 'splits' partts
+
+    Returns:
+        list[Matrix]: splitted matrices
+    """
     rows = len(matrix.elems)
     avg_size = math.ceil(rows / splits)
     splitted : list[Matrix] = [] 
@@ -176,6 +268,14 @@ def split_matrix(matrix: Matrix, splits: int):
     return splitted
 
 def list_to_matrix(l: list[list[bool]]) -> Matrix:
+    """convert a 2d list of bools to a Matrix
+
+    Args:
+        l (list[list[bool]]): 2d list of bools
+
+    Returns:
+        Matrix: the converted matrix
+    """
     return Matrix(l,0)
 
 if __name__ == "__main__":
