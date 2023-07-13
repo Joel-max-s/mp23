@@ -43,8 +43,19 @@ Dabei müssen die groß geschriebenen Worte ersetzt werden durch:</p>
 <li><code>NUMBER_PROCESSES</code>: Anzahl der Prozesse, zB. 8</li>
 <li><code>ROWS</code>: Anzahl der Zeilen der start-Matrix, zB. 1000</li>
 <li><code>COLUMNS</code>: Anzahl der Spalten der start-Matrix. zB. 1000</li>
+<li>zusätzlich kann noch das flag <code>--print-matrix</code> gesetzt werden, dann wird die zufällig generierte Matrix ausgegeben
+<ul>
+<li>am besten nur bei kleinen Matritzen</li>
+<li>am besten Ausgabe in file speichern</li>
 </ul>
-<p>Beispiel: <code>mpirun -np 8 python3 main.py 1000 1000</code></p>
+</li>
+</ul>
+<p>Beispiele:</p>
+<ul>
+<li><code>mpirun -np 8 python3 main.py 1000 1000</code></li>
+<li><code>mpirun -np 8 python3 main.py 12 12 --print-matrix</code></li>
+<li><code>mpirun -np 8 python3 main.py 30 30 --print-matrix &gt; ergebnis.txt</code></li>
+</ul>
 <p>Benchmark laufen lassen: <code>time mpirun --use-hwthread-cpus -np 32 python3 benchmark.py &gt; ergebnis.txt</code></p>
 <ul>
 <li>lässt das Programm mit verschiedenen Matrixgrößen und Kernen laufen</li>
