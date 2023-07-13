@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1,user-scalable=no">
+<meta name="description" content="undefined - microjam page">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js/styles/vs.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markdown-it-texmath/css/texmath.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/goessner/mdmath/themes/publication/style.css">
+
+<title>undefined</title>
+</head>
+<body id="top">
+<header>
+
+
+
+
+
+
+</header>
+<main>
+<h1 id="anleitung-zur-prüfungsaufgabe">Anleitung zur Prüfungsaufgabe</h1>
+<h2 id="abhängigkeiten">Abhängigkeiten</h2>
+<p>Damit das Projekt lauffähig ist müssen folgende Abhängigkeiten installiert sein:</p>
+<ul>
+<li>python3: <code>sudo apt install python3</code></li>
+<li>mpirun: <code>sudo apt install mpich</code></li>
+</ul>
+<p>Damit MPI mit Python verwendet werden kann muss mpi4py installiert werden, dies geht so:</p>
+<ul>
+<li><code>python3 -m pip install -r requirements.txt</code> (traditionelle Art)</li>
+<li><code>sudo apt install python3-mpi4py</code> (ab Ubuntu 23.04 nötig)</li>
+</ul>
+<h2 id="das-programm-laufen-lassen">Das Programm laufen lassen</h2>
+<p>Mithilfe folgenen Befehls kann das Programm ausgeführt werden: <code>mpirun -np NUMBER_PROCESSES python3 main.py ROWS COLUMNS</code>.<br>
+Dabei müssen die groß geschriebenen Worte ersetzt werden durch:</p>
+<ul>
+<li><code>NUMBER_PROCESSES</code>: Anzahl der Prozesse, zB. 8</li>
+<li><code>ROWS</code>: Anzahl der Zeilen der start-Matrix, zB. 1000</li>
+<li><code>COLUMNS</code>: Anzahl der Spalten der start-Matrix. zB. 1000</li>
+</ul>
+<p>Beispiel: <code>mpirun -np 8 python3 main.py 1000 1000</code></p>
+<p>Benchmark laufen lassen: <code>time mpirun --use-hwthread-cpus -np 32 python3 benchmark.py &gt; ergebnis.txt</code></p>
+<ul>
+<li>lässt das Programm mit verschiedenen Matrixgrößen und Kernen laufen</li>
+<li>schreibt ergebnis in <code>ergebnis.txt</code></li>
+<li>dauert bei mir ca. 9 Minuten</li>
+</ul>
+<h2 id="allgemeine-dokumentation">Allgemeine Dokumentation</h2>
+<h3 id="parallelisierungsansatz">Parallelisierungsansatz</h3>
+<p>Die Parallelisierung kommt durch die Aufteilung der Startmatrix in &quot;Blöcke&quot; aus Zeilen.
+Die Startmatrix wird in n kleinere Matritzen aufgeteilt, n ist dabei die Anzahl der Prozesse.
+Jede von den aufgeteilten Matritzen hat gleiche viele Spalten wie die Startmatrix.
+Die Anzahl der Zeilen ist pro aufgeteilter Matrix ist <code>#Zeilen_Startmatrix/n + 1</code>.
+Das Aufteilen der Startmatrix erfolgt wie in einem Binärbaum.
+Die eine Extrazeile ist nötig damit die Ergebnisse später zusammengeführt werden können.
+Nach dem Aufteilen der Matrix berechnet jeder Prozess in seiner eigenen kleinen Matrix die zusammenhängenden Teile.
+Zum Schluss werden die Teilergebnisse wieder zusammengeführt.
+Dies geschieht auch wieder wie in einem Binärbaum.</p>
+<h3 id="struktur-des-programmes">Struktur des Programmes</h3>
+<p>In der <a href="main.py">main.py</a>-Datei befindet sich die parallele Logik.
+Der Prozess mit dem Rang 0 generiert die Startmatrix.
+Danach wird die Aufteilung der Matritzen wie in einem Binärbaum durchgeführt.
+Daraufhin berechnet jeder Prozess die zusammenhängenden Zellen in seiner Matrix.
+Dafür führt jeder Prozess in seiner Matrix Tiefensuchen durch.
+Wenn dies geschehen ist, werden die Teilergebnisse wieder zusammengeführt.
+Dies geschieht über die merge-Funktion der &quot;Row&quot;-Klasse.
+Das zusammenführen der Matritzen erfolgt wieder wie in einem Binärbaum.</p>
+<p>Die Zufällige Matrix wird in <a href="generator.py">generator.py</a> mittels eines random-walks erstellt.
+Die Anzahl und Größe der Inseln ist zufällig, jedoch abhängig von der Größe der Matrix.
+Es können maximal <code>sqrt(#zeilen * #spalten)</code> Inseln auftreten.
+Die Größe der einzelnen Inseln ist ebenfalls durch <code>sqrt(#zeilen * #spalten)</code> beschränkt.</p>
+<h3 id="laufzeitanalyse">Laufzeitanalyse</h3>
+<p>Die Aufwändigsten Teile des Programmes sind die Tiefensuche und das zusammenführen der Teilergebnisse.
+Die Tiefensuche ist am aufwändigsten.
+Diese ist quasi vollständig parallelisiert.
+Das Zusammenführen der Teilergebnisse ist durch das Speichern der Inseln in Mengen und das Vorfiltern der zu zusammenführenden Mengen auch recht effektiv.
+Zu Beginn, wenn noch recht wenig gemergt werden muss, sieht die Laufzeit recht linear in Abhängigkeit von den Prozessen aus.
+Das das mergen jedoch noch besser optimiert werden müsste, dauert es bei umso mehr eingesetzen Prozessen länger (und muss auch öfter durchgeführt werden).
+Da die Zeit zum mergen immer in etwa die gleiche bleibt konvergieren die Ergebnisse dann bei einer höheren Anzahl an Prozessen gegen einen festen Wert.
+Zusätzlich ist zu beachten, dass sich die Laufzeit immer nur verbessert wenn ein neuer &quot;2^x-Meilenstein&quot; ereicht ist.
+Dies ist der Fall, da wenn die Prozesse nicht genau aufgehen, andere Prozesse doppelt so viel rechnen müssen wie andere.
+Dies könnte auch optimiert werden.
+In den anhängenden Bildern sind die Benchmarks anhand von Beispielwerten visualisiert.</p>
+<p><img src="benchmark.png" alt="Benchmark">
+<img src="benchmark_all.png" alt="Benchmark_all"></p>
+
+</main>
+</body>
+</html>

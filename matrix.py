@@ -27,6 +27,13 @@ class Matrix:
         self.elems = e
         self.start_row = s
 
+    def __str__(self) -> str:
+        s = "[\n"
+        for e in self.elems:
+            s += f"\t{e}\n"
+        s += "]\n"
+        return s
+
 class Island:
     """An island is a set off points in the matrix that are neighbours.
     """
@@ -153,7 +160,7 @@ class Row:
 
     def print_info(self) -> None:
         print(f'There are {len(self.islands)} different Islands')
-        print('Here is are the Stats of the Islands:')
+        print('Here are the Stats of the Islands:')
         for i in self.islands:
             i.print_info()
 

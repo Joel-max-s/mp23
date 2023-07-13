@@ -11,9 +11,9 @@ nprocs = comm.Get_size()
 
 ROWS = 10
 COLUMNS = 10
+PRINT_MATRIX = False
 
 def run() -> mx.Row:
-    # TODO
     """calculate the number of islands
 
     Returns:
@@ -25,6 +25,8 @@ def run() -> mx.Row:
     if my_rank == 0:
         l = generator.generate(ROWS, COLUMNS)
         matrix = mx.list_to_matrix(l)
+        if PRINT_MATRIX:
+            print(matrix)
 
     # split the matrix and send them to their receivers
     # this is done in a binary-tree
@@ -64,10 +66,13 @@ if my_rank == 0:
     parser = argparse.ArgumentParser(prog="Pruefungsprojekt mp23", exit_on_error=False, add_help=False)
     parser.add_argument('rows', type=int)
     parser.add_argument('columns', type=int)
+    parser.add_argument('--print-matrix', dest='print_matrix', action='store_true')
+    parser.set_defaults(print_matrix=False)
     try:
         args = parser.parse_args()
         ROWS = int(args.rows)
         COLUMNS = int(args.columns)
+        PRINT_MATRIX = args.print_matrix
 
     except:
         print('You need to specify the number of rows and columns')

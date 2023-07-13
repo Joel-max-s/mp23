@@ -15,10 +15,13 @@ nprocs = comm.Get_size()
 ROWS = 100
 COLUMNS = 100
 
-ROUNDS = 100
+ROUNDS = 50
 
 padding = 20
 pad_round = 15
+
+start:float = 0.0
+end:float = 0.0
 
 def round_pad(num: float):
     return round(num, pad_round)
@@ -30,6 +33,8 @@ def run(procs: int) -> mx.Row:
         mx.Row: the final "ROW", there are all rows in it
     """
 
+    global start
+    global end
     if my_rank >= procs:
         return
 
@@ -41,6 +46,7 @@ def run(procs: int) -> mx.Row:
 
     # split the matrix and send them to their receivers
     # this is done in a binary-tree
+    start = time.time()
     gens = math.ceil(math.log2(procs))
     for gen in range(gens):
         if 2**gen <= my_rank and my_rank < 2**(gen+1):
@@ -70,6 +76,7 @@ def run(procs: int) -> mx.Row:
                 r2 = comm.recv(source=get_from)
                 r.merge(r2)
 
+    end = time.time()
     return r
 
 cores = []
@@ -77,9 +84,13 @@ i = 0
 while 2**i <= nprocs:
     cores.append(2**i)
     i += 1
+# for i in range(1, 33):
+#     cores.append(i)
 
 seed = int(round(datetime.now().timestamp()))
-for i in [100, 200, 400, 800, 1600, 3200, 6400]:
+# for i in [100, 200, 400, 800, 1600, 3200, 6400]:
+# for i in [1000]:
+for i in [100, 200, 400, 800, 1600]:
     if my_rank == 0:
         print(f"Matrix size {i}x{i}:")
         print(f'{"Prozesse": <{10}} {"Durchschnitt": <{padding}} {"Standardabweichung": <{padding}} {"Median": <{padding}} {"Min": <{padding}} {"Max": <{padding}} {"Gesamt": <{padding}}')
@@ -91,9 +102,7 @@ for i in [100, 200, 400, 800, 1600, 3200, 6400]:
         times = []
         random.seed(seed)
         for _ in range(ROUNDS):
-            start = time.time()
             result = run(core)
-            end = time.time()
             times.append(end-start)
 
         if my_rank == 0:
