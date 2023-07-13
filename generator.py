@@ -11,6 +11,7 @@ def generate(rows: int, cols: int) -> list[list[bool]]:
     Args:
         rows (int): Number of rows of the matrix
         cols (int): Number of columns of the matrix
+        seed (int): Seed for the random number generator, optional
 
     Returns:
         list[list[bool]]: 2d matrix of bools, the 'Island-parts' are True
