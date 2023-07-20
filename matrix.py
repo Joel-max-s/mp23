@@ -180,6 +180,7 @@ def count_islands(matrix: Matrix) -> Row:
 
     visited: list[list[int]] = [x[:] for x in [[0] * cols] * rows]
 
+    # search all Islands
     count: int = 0
     for i in range(rows):
         for j in range(cols):
@@ -187,6 +188,7 @@ def count_islands(matrix: Matrix) -> Row:
                 idephtSearch(matrix.elems, visited, i, j, count+1)
                 count += 1
 
+    # generate list with coordinates of islands instead of global view
     arr: list[list[tuple[int, int]]] = []
     for i in range(count):
         arr.append([])
